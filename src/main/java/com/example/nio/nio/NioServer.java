@@ -43,7 +43,7 @@ public class NioServer {
                     System.out.println("客戶端連接成功");
                 } else if (key.isReadable()) {
                     SocketChannel socketChannel = (SocketChannel)key.channel();
-                    ByteBuffer byteBuffer = ByteBuffer.allocate(128);
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(16);
                     int len = socketChannel.read(byteBuffer);
 
                     if (len > 0) {
