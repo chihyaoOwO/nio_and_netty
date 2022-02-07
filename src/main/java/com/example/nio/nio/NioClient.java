@@ -10,7 +10,7 @@ public class NioClient {
     public static void main(String[] args) throws IOException {
         SocketChannel socketChannel = SocketChannel.open();
         socketChannel.connect(new InetSocketAddress("localhost", 9000));
-        socketChannel.write(Charset.defaultCharset().encode("123456789123456789\n"));
+        socketChannel.write(Charset.defaultCharset().encode("123456\n789123456789\n"));
         System.in.read();
     }
 }

@@ -55,9 +55,6 @@ public class NioServer {
                                 byteBuffer.flip();
                                 newBuffer.put(byteBuffer);
                                 key.attach(newBuffer);
-                            } else {
-                                byteBuffer.flip();
-                                System.out.println(String.format("接收到消息:%s", new String(byteBuffer.array())));
                             }
                         } else if (len == -1) {
                             System.out.println("客戶端斷開連線");
@@ -83,6 +80,7 @@ public class NioServer {
                 for (int j = 0; j < length; j++) {
                     target.put(source.get());
                 }
+                System.out.println(String.format("接收到消息:%s", new String(target.array())));
             }
         }
         source.compact();
