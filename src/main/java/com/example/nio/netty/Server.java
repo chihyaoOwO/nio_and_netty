@@ -1,13 +1,14 @@
 package com.example.nio.netty;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
+
+import java.nio.charset.Charset;
 
 public class Server {
 
@@ -22,11 +23,28 @@ public class Server {
                     @Override
                     protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
                         // 將 ByteBuffer 轉為字串
-                        nioSocketChannel.pipeline().addLast(new StringDecoder());
+//                        nioSocketChannel.pipeline().addLast(new StringDecoder());
                         nioSocketChannel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
                             @Override
                             public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                                System.out.println(msg);
+                                ByteBuf buffer = (ByteBuf) msg;
+                                String name = buffer.toString(Charset.defaultCharset());
+                                // 可以把處理好的訊息傳給下個 handler, 如果不調用 鏈就會斷開
+                                super.channelRead(ctx, name);
+                            }
+                        });
+                        nioSocketChannel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                            @Override
+                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                                System.out.println(String.format("name : %s", msg));
+                                // 有寫出才會觸發 ChannelOutboundHandlerAdapter 的 write 方法
+                                nioSocketChannel.writeAndFlush(ctx.alloc().buffer().writeBytes("server...".getBytes()));
+                            }
+                        });
+                        nioSocketChannel.pipeline().addLast(new ChannelOutboundHandlerAdapter() {
+                            @Override
+                            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+                                super.write(ctx, msg, promise);
                             }
                         });
                     }
