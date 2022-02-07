@@ -39,23 +39,52 @@ public class NioServer {
                     SocketChannel socketChannel = server.accept();
                     socketChannel.configureBlocking(false);
 //                  註冊該事件 監聽READ事件
-                    socketChannel.register(selector, SelectionKey.OP_READ);
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(16);
+                    socketChannel.register(selector, SelectionKey.OP_READ, byteBuffer);
                     System.out.println("客戶端連接成功");
                 } else if (key.isReadable()) {
-                    SocketChannel socketChannel = (SocketChannel)key.channel();
-                    ByteBuffer byteBuffer = ByteBuffer.allocate(16);
-                    int len = socketChannel.read(byteBuffer);
+                    try {
+                        SocketChannel socketChannel = (SocketChannel)key.channel();
+                        ByteBuffer byteBuffer = (ByteBuffer) key.attachment();
+                        int len = socketChannel.read(byteBuffer);
 
-                    if (len > 0) {
-                        System.out.println(String.format("接收到消息:%s", new String(byteBuffer.array())));
-                    } else if (len == -1) {
-                        System.out.println("客戶端斷開連線");
-                        socketChannel.close();
+                        if (len > 0) {
+                            split(byteBuffer);
+                            if (byteBuffer.position() == byteBuffer.limit()) {
+                                ByteBuffer newBuffer = ByteBuffer.allocate(byteBuffer.capacity() * 2);
+                                byteBuffer.flip();
+                                newBuffer.put(byteBuffer);
+                                key.attach(newBuffer);
+                            } else {
+                                byteBuffer.flip();
+                                System.out.println(String.format("接收到消息:%s", new String(byteBuffer.array())));
+                            }
+                        } else if (len == -1) {
+                            System.out.println("客戶端斷開連線");
+                            socketChannel.close();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        key.cancel();
                     }
                 }
 
                 iterator.remove();
             }
         }
+    }
+
+    private static void split(ByteBuffer source) {
+        source.flip();
+        for (int i = 0; i < source.limit(); i++) {
+            if (source.get(i) == '\n') {
+                int length = i + 1 - source.position();
+                ByteBuffer target = ByteBuffer.allocate(length);
+                for (int j = 0; j < length; j++) {
+                    target.put(source.get());
+                }
+            }
+        }
+        source.compact();
     }
 }
