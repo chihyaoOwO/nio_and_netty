@@ -1,6 +1,7 @@
 package com.example.nio.netty;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -9,7 +10,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringEncoder;
 
 import java.net.InetSocketAddress;
-import java.util.Locale;
 import java.util.Scanner;
 
 public class Client {
@@ -39,7 +39,9 @@ public class Client {
                     channel.close();
                     break;
                 }
-                channel.writeAndFlush(str);
+                ByteBuf buf = channel.alloc().buffer();
+                buf.writeBytes(str.getBytes());
+                channel.writeAndFlush(buf);
             }
         }, "input").start();
     }
